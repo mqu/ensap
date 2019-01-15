@@ -28,3 +28,4 @@ Le vidéo-turoriel devrait suffir : https://www.dailymotion.com/video/x6kbaon
 - parse PDF to extract some information aboit pay-sheet content.
 - extend CLI options.
 - extend docker usability.
+- study distroless containers
