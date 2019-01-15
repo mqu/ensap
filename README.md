@@ -19,6 +19,11 @@ Restiction :
 
 Le vidéo-turoriel devrait suffir : https://www.dailymotion.com/video/x6kbaon
 
+## utilisation
+
+- le script a besoin du login (numéro SECU) et mot de passe ; 
+- à terme, on pourra passer ces paramêtre via des options avec des actions : ls, dl(all,2019,current). 
+
 ## TODO
 
 - parse PDF to extract some information aboit pay-sheet content.
