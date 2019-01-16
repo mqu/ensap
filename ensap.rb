@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-# Marc Quinton / janvier 2019 - client CLI sur le site de l'ENSAP ; version 0.1
+# Marc Quinton / janvier 2019 - client CLI sur le site de l'ENSAP ; version 0.12
 # URL du service : https://ensap.gouv.fr/
 #
 # cette application permet de recupérer vos fiches de paye numérisée sur le site de l'ENSAP
@@ -25,11 +25,24 @@ class Ensap
 		@user=user
 		@passwd=passwd
 		@client = Mechanize.new
+		@cache={
+			:years => nil
+		}
 		@url={
 			:home  => 'https://ensap.gouv.fr/web/accueil',
 			:login => 'https://ensap.gouv.fr/authentification',
+
+			# habilitations / droits d'accès
+			:acl	=> 'https://ensap.gouv.fr/prive/initialiserhabilitation/v1',
+			
+			# concerne les rémunérations
+			# donne la liste des documents accessibles au téléchargement par année.
 			:remuneration => 'https://ensap.gouv.fr/prive/anneeremuneration/v1/',  # remuneration by year
-			:download	=> 'https://ensap.gouv.fr/prive/telechargerdocumentremuneration/v1'
+			:download	=> 'https://ensap.gouv.fr/prive/telechargerdocumentremuneration/v1',
+			
+			# quelles sont les années disponibles à la lecture, téléchargement
+			:years  => 'https://ensap.gouv.fr/prive/listeanneeremuneration/v1'
+			
 		}
 	end
 	
@@ -47,6 +60,28 @@ class Ensap
 		end
 	end
 
+	# get some ACL and account status from portal
+	#
+	# {"lectureSeule"=>false,
+	#  "listeService"=>
+	#   {"compteindividuelretraite"=>true,
+	#    "demandedepartretraite"=>true,
+	#    "pensionne"=>false,
+	#    "remuneration"=>true,
+	#    "retraite"=>true,
+	#    "simulation"=>false,
+	#    "suividepartretraite"=>false}}
+	def acl
+		headers = { 'Content-Type' => 'application/json; charset=utf-8'}
+		args={}
+		JSON.parse(@client.post(@url[:acl], args, headers).body)
+	end
+
+	def years
+		@cache[:years]=JSON.parse(@client.get(@url[:years]).body)['donnee'] unless @cache[:years]!=nil
+		@cache[:years]
+	end
+
 	# return an array of hash :
 	# {"documentUuid"=>"b0ba4820-XXXX-YYYY-bf90-06b560530509",
 	# "libelle1"=>"Janvier 2018",
@@ -57,10 +92,21 @@ class Ensap
 	# "icone"=>"document",
 	# "libelleIcone"=>"Icône bulletin de paye"},
 	def remuneration_by_year year
-		JSON.parse(@client.get(@url[:remuneration]+year.to_s).body)['donnee']
+		puts "remuneration_by_year(#{year})"
+		if year==:all
+			list=[]
+			self.years.each do |y|
+				list.concat(self.remuneration_by_year(y))
+			end
+			return list.sort_by{ |e| e['dateDocument']}
+		else
+			JSON.parse(@client.get(@url[:remuneration]+year.to_s).body)['donnee']
+		end
 	end
+	alias ls remuneration_by_year
 
-	# https://ensap.gouv.fr/prive/telechargerdocumentremuneration/v1?documentUuid=7bfef65e-XXXX-YYYY-aebb-001a4ae186a2
+
+	# https://ensap.gouv.fr/prive/telechargerdocumentremuneration/v1?documentUuid=XYZ-XXX-123
 	def download id
 		args={
 			:documentUuid  => id
@@ -71,23 +117,74 @@ class Ensap
 	end
 	
 	def download_by_year year, dir
-		Dir.mkdir dir unless Dir.exist? dir
-		self.remuneration_by_year(year).each do |_doc|
-			file='docs/'+_doc['nomDocument']
-			unless File.exist? file
-				puts "# downloading " + _doc['nomDocument']
-				data=self.download _doc['documentUuid']
-				IO.write(file, data) unless data==nil
+		puts "download_by_year(#{dir})"
+		if year==:all
+			self.years.each do |y|
+				self.download_by_year y, dir
 			end
-		end		
+		else
+			Dir.mkdir dir unless Dir.exist? dir
+			
+			self.remuneration_by_year(year).each do |_doc|
+				file='docs/'+_doc['nomDocument']
+				unless File.exist? file
+					puts "# downloading " + _doc['nomDocument']
+					data=self.download _doc['documentUuid']
+					IO.write(file, data) unless data==nil
+				end
+			end
+		end	
 	end
+	
+	def dl_all dir='docs/'
+		self.years.each do |y|
+			self.dl y, dir
+		end
+	end
+	
 end
 
-client=Ensap.new '123456789012345', 'your-password'
+if ARGV.size>=2
+	client=Ensap.new ARGV[0], ARGV[1]
+else
+	# you can modify user and password here.
+	client=Ensap.new '123456789012345', 'your-password'
+end
+
+if ARGV.size==3
+	cmd=ARGV[2]
+else
+	cmd=:ls
+end
+
+docs='./docs'
+
 if client.login
 	puts "# connexion réussie"
-  # pour les années de 2016 à l'année courante :
-	(2016..Time.new.year).each do |y|
-		client.download_by_year y, 'docs'
+	
+	case cmd.to_sym
+
+		when :test
+			pp client.years
+
+		when :acl
+			pp client.acl
+
+		when :ls
+			year=:all if ARGV.size==3
+			year=ARGV[3].to_sym if ARGV.size==4
+			pp client.ls year
+
+		# dowload all documents to localdir
+		when :dl|:download
+			# pour les années de 2016 à l'année courante :
+			client.dl :all, docs
+
+		# download current year
+		when :dl_current
+			# pour les années de 2016 à l'année courante :
+			client.dl Time.new.year, docs
 	end
+else
+	puts "# connexion error"
 end
