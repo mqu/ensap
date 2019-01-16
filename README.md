@@ -11,9 +11,6 @@ L'ensemble est réalisé en ruby et permet de s'authentifier sur le site et d'ef
 
 Par ailleurs, je projete de réaliser un container Docker permettant de simplifier l'acces à ce service.
 
-Restiction :
-- je ne dispose sur mon compte que des années 2016 à la date courante. L'application considère que 2016 est la première année disponible pour le téléchargement.
-
 ## Mise en place :
 
 Le vidéo-turoriel devrait suffir : https://www.dailymotion.com/video/x6kbaon
@@ -23,11 +20,11 @@ Le vidéo-turoriel devrait suffir : https://www.dailymotion.com/video/x6kbaon
 ## utilisation
 
 - le script a besoin du login (numéro SECU) et mot de passe ; 
-- à terme, on pourra passer ces paramêtre via des options avec des actions : ls, dl(all,2019,current). 
+- à terme, on pourra passer ces paramêtres via des options avec des actions : ls, dl(all,2019,current).
 
 ## TODO
 
 - parse PDF to extract some information aboit pay-sheet content.
 - extend CLI options.
-- extend docker usability.
+- extend docker container usability.
 - study distroless containers
