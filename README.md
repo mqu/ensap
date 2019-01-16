@@ -12,7 +12,7 @@ L'ensemble est réalisé en ruby et permet de s'authentifier sur le site et d'ef
 Par ailleurs, je projete de réaliser un container Docker permettant de simplifier l'acces à ce service.
 
 Restiction :
-- je ne dispose sur mon compte que des années 2016 à la date courante
+- je ne dispose sur mon compte que des années 2016 à la date courante. L'application considère que 2016 est la première année disponible pour le téléchargement.
 
 ## Mise en place :
 
