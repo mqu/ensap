@@ -17,6 +17,8 @@ Restiction :
 ## Mise en place :
 
 Le vidéo-turoriel devrait suffir : https://www.dailymotion.com/video/x6kbaon
+- 1 : création de l'espace numérique sécurisé : numéro de sécu, nom et date de naissance
+- 2 : compléter par les références bancaires.
 
 ## utilisation
 
