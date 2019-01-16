@@ -1,0 +1,28 @@
+FROM ruby:2.5.3-stretch as ruby
+
+# RUN set -x ; \
+#  apt update ; \
+#  apt install -y ruby-json ruby-mechanize
+
+RUN set -x ; \
+  gem install json mechanize
+ 
+# FROM gc\r.io/distroless/base
+FROM busybox:glibc
+
+COPY --from=ruby /bin/bash /bin/sh
+COPY --from=ruby /lib/x86_64-linux-gnu/libz.so.* /lib/x86_64-linux-gnu/
+COPY --from=ruby /usr/lib/x86_64-linux-gnu/libyaml* /usr/lib/x86_64-linux-gnu/
+COPY --from=ruby /lib/x86_64-linux-gnu/libtinfo.so.5 /lib/x86_64-linux-gnu/
+COPY --from=ruby /usr/local/lib/ /usr/local/lib
+COPY --from=ruby /usr/local/bin/ /usr/local/bin
+COPY --from=ruby /lib/x86_64-linux-gnu/libdl.so.2 /lib/x86_64-linux-gnu/
+COPY --from=ruby /lib/x86_64-linux-gnu/libcrypt.so.1 /lib/x86_64-linux-gnu/
+
+# RUN mkdir /app
+WORKDIR /srv
+COPY ensap.rb /srv
+
+# CMD ["/usr/local/bin/ruby", "-v"]
+# CMD ["/usr/local/bin/ruby", "/app/ensap.rb"]
+# ENTRYPOINT ruby /srv/ensap.rb
